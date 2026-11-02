@@ -21,8 +21,10 @@ android {
 
     buildTypes {
         release {
+            // Why: temporary, only so the release variant installs without a real keystore while testing performance.
+            signingConfig = signingConfigs.getByName("debug")
             optimization {
-                enable = false
+                enable = true
             }
         }
     }
@@ -56,5 +58,7 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 
     //JavaLunarCore: thư viện chuyển đổi lịch âm sang lịch dương
-    implementation("com.github.appota:JavaLunarCore:1.0.2")
+    implementation("com.github.appota:JavaLunarCore:1.0.2") {
+        isTransitive = false
+    }
 }
