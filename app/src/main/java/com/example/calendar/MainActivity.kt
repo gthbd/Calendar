@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import com.example.calendar.ui.CalendarApp
 import com.example.calendar.ui.screens.CalendarScreen
 import com.example.calendar.ui.theme.CalendarTheme
 import java.time.LocalDate
@@ -20,7 +21,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             CalendarTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    CalendarScreen(
+                    // Gọi CalendarApp thay vì CalendarScreen
+                    CalendarApp(
                         today = today,
                         modifier = Modifier.padding(innerPadding),
                     )

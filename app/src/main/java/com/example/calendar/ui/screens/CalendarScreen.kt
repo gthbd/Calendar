@@ -38,57 +38,53 @@ import kotlinx.coroutines.launch
 fun monthTitle(month: YearMonth): String = "Tháng ${month.monthValue} năm ${month.year}"
 
 @Composable
-fun CalendarScreen(today: LocalDate, modifier: Modifier = Modifier) {
+fun CalendarScreen(
+    today: LocalDate,
+    onDayClick: (LocalDate) -> Unit, // Thêm callback này
+    modifier: Modifier = Modifier
+) {
     val pagerState = rememberPagerState(initialPage = pageOfMonth(YearMonth.from(today))) { MONTH_PAGE_COUNT }
     val visibleMonth = monthOfPage(pagerState.currentPage)
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
-    if (selectedDate != null) {
-        DayDetailScreen(
-            date = selectedDate!!,
-            onBackClick = { selectedDate = null },
-            modifier = modifier
-        )
-    } else {
-        Column(modifier = modifier) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Nút chuyển về tháng trước
+            CalendarNavButton(
+                iconRes = R.drawable.arrow_upward,
+                contentDescription = "Previous month",
+                rotation = 270f,
+                alignment = Alignment.CenterStart,
+                enabled = pagerState.currentPage > 0
             ) {
-                // Nút chuyển về tháng trước
-                CalendarNavButton(
-                    iconRes = R.drawable.arrow_upward,
-                    contentDescription = "Previous month",
-                    rotation = 270f,
-                    alignment = Alignment.CenterStart,
-                    enabled = pagerState.currentPage > 0
-                ) {
-                    coroutineScope.launch {
-                        if (pagerState.currentPage > 0) {
-                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                        }
+                coroutineScope.launch {
+                    if (pagerState.currentPage > 0) {
+                        pagerState.animateScrollToPage(pagerState.currentPage - 1)
                     }
                 }
+            }
 
-                // Tiêu đề tháng năm (chiếm khoảng trống ở giữa)
-                Text(
-                    text = monthTitle(visibleMonth),
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(16.dp),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.titleLarge,
+            // Tiêu đề tháng năm (chiếm khoảng trống ở giữa)
+            Text(
+                text = monthTitle(visibleMonth),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(16.dp),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleLarge,
                 )
 
-                // Nút chuyển sang tháng sau
-                CalendarNavButton(
-                    iconRes = R.drawable.arrow_upward,
-                    contentDescription = "Next month",
-                    rotation = 90f,
-                    alignment = Alignment.CenterEnd,
-                    enabled = pagerState.currentPage < MONTH_PAGE_COUNT - 1
+            // Nút chuyển sang tháng sau
+            CalendarNavButton(
+                iconRes = R.drawable.arrow_upward,
+                contentDescription = "Next month",
+                rotation = 90f,
+                alignment = Alignment.CenterEnd,
+                enabled = pagerState.currentPage < MONTH_PAGE_COUNT - 1
                 ) {
                     coroutineScope.launch {
                         if (pagerState.currentPage < MONTH_PAGE_COUNT - 1) {
@@ -98,13 +94,15 @@ fun CalendarScreen(today: LocalDate, modifier: Modifier = Modifier) {
                 }
             }
 
-            HorizontalPager(state = pagerState) { page ->
-                MonthView(
-                    month = monthOfPage(page),
-                    today = today,
-                    onDayClick = { selectedDate = it },
-                )
-            }
+        HorizontalPager(state = pagerState) { page ->
+            MonthView(
+                month = monthOfPage(page),
+                today = today,
+                onDayClick = { date ->
+                    // Gọi callback khi click vào ngày để Navigation 3 chuyển trang
+                    onDayClick(date)
+                },
+            )
         }
     }
 }
@@ -134,13 +132,5 @@ private fun CalendarNavButton(
             tint = if (enabled) MaterialTheme.colorScheme.onSurface
             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun CalendarScreenPreview() {
-    MaterialTheme {
-        CalendarScreen(today = LocalDate.of(2026, 11, 2))
     }
 }
