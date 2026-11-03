@@ -17,7 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
@@ -25,7 +27,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.calendar.MonthView
-import com.example.calendar.ui.uiItems.DayDetailSheet
 import com.example.calendar.ui.uiItems.MONTH_PAGE_COUNT
 import com.example.calendar.ui.uiItems.monthOfPage
 import com.example.calendar.ui.uiItems.pageOfMonth
@@ -41,60 +42,69 @@ fun CalendarScreen(today: LocalDate, modifier: Modifier = Modifier) {
     val pagerState = rememberPagerState(initialPage = pageOfMonth(YearMonth.from(today))) { MONTH_PAGE_COUNT }
     val visibleMonth = monthOfPage(pagerState.currentPage)
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            // Nút chuyển về tháng trước
-            CalendarNavButton(
-                iconRes = R.drawable.arrow_upward,
-                contentDescription = "Previous month",
-                rotation = 270f,
-                alignment = Alignment.CenterStart,
-                enabled = pagerState.currentPage > 0
+    if (selectedDate != null) {
+        DayDetailScreen(
+            date = selectedDate!!,
+            onBackClick = { selectedDate = null },
+            modifier = modifier
+        )
+    } else {
+        Column(modifier = modifier) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                coroutineScope.launch {
-                    if (pagerState.currentPage > 0) {
-                        pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                // Nút chuyển về tháng trước
+                CalendarNavButton(
+                    iconRes = R.drawable.arrow_upward,
+                    contentDescription = "Previous month",
+                    rotation = 270f,
+                    alignment = Alignment.CenterStart,
+                    enabled = pagerState.currentPage > 0
+                ) {
+                    coroutineScope.launch {
+                        if (pagerState.currentPage > 0) {
+                            pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                        }
+                    }
+                }
+
+                // Tiêu đề tháng năm (chiếm khoảng trống ở giữa)
+                Text(
+                    text = monthTitle(visibleMonth),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleLarge,
+                )
+
+                // Nút chuyển sang tháng sau
+                CalendarNavButton(
+                    iconRes = R.drawable.arrow_upward,
+                    contentDescription = "Next month",
+                    rotation = 90f,
+                    alignment = Alignment.CenterEnd,
+                    enabled = pagerState.currentPage < MONTH_PAGE_COUNT - 1
+                ) {
+                    coroutineScope.launch {
+                        if (pagerState.currentPage < MONTH_PAGE_COUNT - 1) {
+                            pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                        }
                     }
                 }
             }
 
-            // Tiêu đề tháng năm (chiếm khoảng trống ở giữa)
-            Text(
-                text = monthTitle(visibleMonth),
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(16.dp),
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleLarge,
-            )
-
-            // Nút chuyển sang tháng sau
-            CalendarNavButton(
-                iconRes = R.drawable.arrow_upward,
-                contentDescription = "Next month",
-                rotation = 90f,
-                alignment = Alignment.CenterEnd,
-                enabled = pagerState.currentPage < MONTH_PAGE_COUNT - 1
-            ) {
-                coroutineScope.launch {
-                    if (pagerState.currentPage < MONTH_PAGE_COUNT - 1) {
-                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                    }
-                }
+            HorizontalPager(state = pagerState) { page ->
+                MonthView(
+                    month = monthOfPage(page),
+                    today = today,
+                    onDayClick = { selectedDate = it },
+                )
             }
-        }
-
-        HorizontalPager(state = pagerState) { page ->
-            MonthView(
-                month = monthOfPage(page),
-                today = today,
-                onDayClick = { selectedDate = it },
-            )
         }
     }
 }
@@ -110,8 +120,8 @@ private fun CalendarNavButton(
 ) {
     Box(
         modifier = Modifier
-            .padding(horizontal = 12.dp)
             .size(48.dp)
+            .padding(horizontal = 14.dp)
             .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = alignment
     ) {
@@ -120,8 +130,7 @@ private fun CalendarNavButton(
             contentDescription = contentDescription,
             modifier = Modifier
                 .rotate(rotation)
-                .size(32.dp),
-            // Tùy chọn làm mờ icon khi bị vô hiệu hóa (disabled)
+                .size(48.dp),
             tint = if (enabled) MaterialTheme.colorScheme.onSurface
             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         )

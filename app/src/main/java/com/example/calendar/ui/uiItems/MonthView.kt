@@ -46,6 +46,15 @@ fun MonthView(
 ) {
     val cells = remember(month) { monthGridCells(month) }
 
+    // Pre-calculate lunar dates and holidays for all days in this month at once
+    val monthLunarData = remember(month) {
+        cells.filterNotNull().associateWith { date ->
+            val lunar = date.toLunar()
+            val isHoliday = holidaysOf(date, lunar).isNotEmpty()
+            Pair(lunar, isHoliday)
+        }
+    }
+
     Column(modifier = modifier) {
         WeekdayHeader()
         LazyVerticalGrid(columns = GridCells.Fixed(WEEKDAY_LABELS.size)) {
@@ -53,7 +62,14 @@ fun MonthView(
                 if (date == null) {
                     EmptyCell()
                 } else {
-                    DayCell(date, isToday = date == today, onClick = { onDayClick(date) })
+                    val (lunar, isHoliday) = monthLunarData[date]!!
+                    DayCell(
+                        date = date,
+                        lunar = lunar,
+                        isHoliday = isHoliday,
+                        isToday = date == today,
+                        onClick = { onDayClick(date) }
+                    )
                 }
             }
         }
@@ -66,12 +82,18 @@ private fun EmptyCell() {
 }
 
 @Composable
-private fun DayCell(date: LocalDate, isToday: Boolean, onClick: () -> Unit) {
+private fun DayCell(
+    date: LocalDate,
+    lunar: LunarDate,
+    isHoliday: Boolean,
+    isToday: Boolean,
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier.aspectRatio(1f).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        DayLabels(date, isToday)
+        DayLabels(date.dayOfMonth, lunar, isHoliday, isToday)
     }
 }
 
@@ -90,12 +112,9 @@ private fun WeekdayHeader() {
 }
 
 @Composable
-private fun DayLabels(date: LocalDate, isToday: Boolean) {
-    val lunar = remember(date) { date.toLunar() }
-    val isHoliday = remember(date) { holidaysOf(date, lunar).isNotEmpty() }
-
+private fun DayLabels(dayOfMonth: Int, lunar: LunarDate, isHoliday: Boolean, isToday: Boolean) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        DayNumber(date.dayOfMonth, isToday)
+        DayNumber(dayOfMonth, isToday)
         Text(text = lunarCellLabel(lunar), style = MaterialTheme.typography.labelSmall)
         HolidayDot(isHoliday)
     }
