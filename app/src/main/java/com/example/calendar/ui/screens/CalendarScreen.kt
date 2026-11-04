@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Icon
@@ -89,7 +91,7 @@ fun CalendarScreen(
             }
 
             // Tiêu đề tháng năm
-            Text(
+/*            Text(
                 text = monthTitle(visibleMonth),
                 modifier = Modifier
                     .weight(1f)
@@ -98,7 +100,29 @@ fun CalendarScreen(
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
                 )
+*/
 
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable {showPicker = true}
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = monthTitle(visibleMonth),
+                    style = MaterialTheme.typography.titleLarge,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Icon(
+                    painter = painterResource(id=R.drawable.arrow_dropdown),
+                    contentDescription = "dropdown",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
             // Nút chuyển sang tháng sau
             CalendarNavButton(
                 iconRes = R.drawable.arrow_upward,
