@@ -20,14 +20,22 @@ import androidx.compose.ui.unit.dp
 import com.example.calendar.R
 import com.example.calendar.ui.uiItems.dayDetailsOf
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 @Composable
 fun DayDetailScreen(
     date: LocalDate,
+    today: LocalDate,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val details = remember(date) { dayDetailsOf(date) }
+    val daysBetween = remember(date, today) { ChronoUnit.DAYS.between(today, date) }
+    val distanceText = when {
+        daysBetween == 0L -> "Cách ngày hiện tại: Hôm nay (0 ngày)"
+        daysBetween > 0L -> "Cách ngày hiện tại: Sau $daysBetween ngày"
+        else -> "Cách ngày hiện tại: Trước ${-daysBetween} ngày"
+    }
 
     Column(modifier = modifier.fillMaxSize().padding(16.dp)) {
         Row(
@@ -63,6 +71,11 @@ fun DayDetailScreen(
             )
             Text(
                 text = "Âm lịch: ${details.lunarDate}",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Text(
+                text = distanceText,
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 8.dp)
             )

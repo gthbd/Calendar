@@ -45,6 +45,7 @@ fun CalendarApp(today: LocalDate, modifier: Modifier = Modifier) {
                 is Screen.DayDetail -> NavEntry(key) {
                     DayDetailScreen(
                         date = key.date,
+                        today = today,
                         onBackClick = {
                             // Khi bấm nút back, xóa key ở đỉnh stack để quay lại Calendar
                             backStack.removeLastOrNull()

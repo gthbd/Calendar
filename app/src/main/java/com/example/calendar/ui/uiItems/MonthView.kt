@@ -16,17 +16,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.calendar.calendarItems.LunarDate
-import com.example.calendar.calendarItems.holidaysOf
 import com.example.calendar.ui.uiItems.monthGridCells
-import com.example.calendar.calendarItems.toLunar
+import com.example.calendar.viewModel.CalendarViewModel
+import com.example.calendar.viewModel.DayLunarInfo
 import java.time.LocalDate
 import java.time.YearMonth
 
@@ -41,18 +42,14 @@ fun lunarCellLabel(lunar: LunarDate): String =
 fun MonthView(
     month: YearMonth,
     today: LocalDate,
+    viewModel: CalendarViewModel,
     onDayClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val cells = remember(month) { monthGridCells(month) }
 
-    // Pre-calculate lunar dates and holidays for all days in this month at once
-    val monthLunarData = remember(month) {
-        cells.filterNotNull().associateWith { date ->
-            val lunar = date.toLunar()
-            val isHoliday = holidaysOf(date, lunar).isNotEmpty()
-            Pair(lunar, isHoliday)
-        }
+    val monthLunarData by produceState(initialValue = emptyMap<LocalDate, DayLunarInfo>(), month) {
+        value = viewModel.getOrComputeMonthData(month)
     }
 
     Column(modifier = modifier) {
@@ -62,7 +59,9 @@ fun MonthView(
                 if (date == null) {
                     EmptyCell()
                 } else {
-                    val (lunar, isHoliday) = monthLunarData[date]!!
+                    val info = monthLunarData[date]
+                    val lunar = info?.lunarDate ?: LunarDate(1, 1, date.year, false)
+                    val isHoliday = info?.isHoliday ?: false
                     DayCell(
                         date = date,
                         lunar = lunar,
@@ -140,14 +139,4 @@ private fun HolidayDot(isHoliday: Boolean) {
     Box(modifier = Modifier.size(HOLIDAY_DOT_SIZE).background(color, CircleShape))
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun MonthViewPreview() {
-    MaterialTheme {
-        MonthView(
-            month = YearMonth.of(2026, 11),
-            today = LocalDate.of(2026, 11, 2),
-            onDayClick = {},
-        )
-    }
-}
+

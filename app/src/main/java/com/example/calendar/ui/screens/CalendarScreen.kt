@@ -24,28 +24,48 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.calendar.MonthView
+import com.example.calendar.R
 import com.example.calendar.ui.uiItems.MONTH_PAGE_COUNT
+import com.example.calendar.ui.uiItems.MonthYearPickerDialog
 import com.example.calendar.ui.uiItems.monthOfPage
 import com.example.calendar.ui.uiItems.pageOfMonth
+import com.example.calendar.viewModel.CalendarViewModel
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
-import com.example.calendar.R
-import kotlinx.coroutines.launch
 
 fun monthTitle(month: YearMonth): String = "Tháng ${month.monthValue} năm ${month.year}"
 
 @Composable
 fun CalendarScreen(
     today: LocalDate,
-    onDayClick: (LocalDate) -> Unit, // Thêm callback này
+    onDayClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(initialPage = pageOfMonth(YearMonth.from(today))) { MONTH_PAGE_COUNT }
     val visibleMonth = monthOfPage(pagerState.currentPage)
     val coroutineScope = rememberCoroutineScope()
+    val viewModel: CalendarViewModel = viewModel()
+
+    // Hộp thoại chọn tháng/năm
+    var showPicker by remember { mutableStateOf(false) }
+    if (showPicker) {
+        MonthYearPickerDialog(
+            visibleMonth = visibleMonth,
+            onDismiss = { showPicker = false },
+            onMonthSelected = { targetMonth ->
+                showPicker = false
+                val targetPage = pageOfMonth(targetMonth)
+                coroutineScope.launch {
+                    pagerState.animateScrollToPage(targetPage)
+                }
+            }
+        )
+    }
+
 
     Column(modifier = modifier) {
         Row(
@@ -68,11 +88,12 @@ fun CalendarScreen(
                 }
             }
 
-            // Tiêu đề tháng năm (chiếm khoảng trống ở giữa)
+            // Tiêu đề tháng năm
             Text(
                 text = monthTitle(visibleMonth),
                 modifier = Modifier
                     .weight(1f)
+                    .clickable { showPicker = true }
                     .padding(16.dp),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
@@ -98,8 +119,8 @@ fun CalendarScreen(
             MonthView(
                 month = monthOfPage(page),
                 today = today,
+                viewModel = viewModel,
                 onDayClick = { date ->
-                    // Gọi callback khi click vào ngày để Navigation 3 chuyển trang
                     onDayClick(date)
                 },
             )
