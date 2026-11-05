@@ -73,7 +73,7 @@ fun MonthYearPickerDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Lưới 12 tháng (3 hàng x 4 cột)
+                // Lưới 12 tháng
                 val months = (1..12).toList()
                 months.chunked(3).forEach { rowMonths ->
                     Row(
