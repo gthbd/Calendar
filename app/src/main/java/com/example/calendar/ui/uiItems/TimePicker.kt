@@ -1,12 +1,15 @@
 package com.example.calendar.ui.uiItems
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.calendar.R
@@ -21,6 +24,7 @@ fun MonthYearPickerDialog(
 ) {
     var selectedYear by remember { mutableStateOf(visibleMonth.year) }
     var selectedMonth by remember { mutableStateOf(visibleMonth.monthValue) }
+    var showYearDialog by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -54,9 +58,13 @@ fun MonthYearPickerDialog(
                         )
                     }
 
+                    // Click vào năm để mở Dialog nhập số
                     Text(
-                        text = "Năm $selectedYear",
-                        style = MaterialTheme.typography.titleLarge
+                        text = "Năm $selectedYear ✎",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier
+                            .clickable { showYearDialog = true }
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
                     )
 
                     IconButton(
@@ -71,9 +79,64 @@ fun MonthYearPickerDialog(
                     }
                 }
 
+                // Dialog nhập năm
+                if (showYearDialog) {
+                    var yearInputText by remember { mutableStateOf(selectedYear.toString()) }
+                    var isError by remember { mutableStateOf(false) }
+
+                    AlertDialog(
+                        onDismissRequest = { showYearDialog = false },
+                        title = { Text("Nhập năm") },
+                        text = {
+                            Column {
+                                OutlinedTextField(
+                                    value = yearInputText,
+                                    onValueChange = { 
+                                        yearInputText = it
+                                        val parsed = it.toIntOrNull()
+                                        isError = parsed == null || parsed !in SUPPORTED_YEARS
+                                    },
+                                    isError = isError,
+                                    singleLine = true,
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    label = { Text("Năm (${SUPPORTED_YEARS.first}-${SUPPORTED_YEARS.last})") }
+                                )
+                                if (isError) {
+                                    Text(
+                                        text = "Năm phải từ ${SUPPORTED_YEARS.first} đến ${SUPPORTED_YEARS.last}",
+                                        color = MaterialTheme.colorScheme.error,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(
+                                onClick = {
+                                    val parsedYear = yearInputText.toIntOrNull()
+                                    if (parsedYear != null && parsedYear in SUPPORTED_YEARS) {
+                                        selectedYear = parsedYear
+                                        showYearDialog = false
+                                    } else {
+                                        isError = true
+                                    }
+                                }
+                            ) {
+                                Text("Xác nhận")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showYearDialog = false }) {
+                                Text("Hủy")
+                            }
+                        }
+                    )
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Lưới 12 tháng (3 hàng x 4 cột)
+                // Lưới 12 tháng
                 val months = (1..12).toList()
                 months.chunked(3).forEach { rowMonths ->
                     Row(
